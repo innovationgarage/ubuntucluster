@@ -1,0 +1,3 @@
+*.sshkey*
+docker-compose.yml
+config.sh

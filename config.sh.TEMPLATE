@@ -1,0 +1,4 @@
+export SWARM=ymslanda.innovationgarage.tech
+export DOCKER_HOST=tcp://$SWARM:2375
+export REGISTRY=$SWARM:5000
+export DATADIR=/ymslanda
