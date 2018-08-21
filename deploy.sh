@@ -16,6 +16,9 @@ CLUSTER_PUBKEY="$(tr "\n" "%" < $CLUSTER.sshkey.pub)"
 docker build --tag $REGISTRY/ubuntucluster:latest .
 docker push $REGISTRY/ubuntucluster:latest 
 
+NODES="n1$(for ((idx=2;idx<=SIZE;idx++)); do echo -n ",n$idx"; done)"
+NODESLST="n1$(for ((idx=2;idx<=SIZE;idx++)); do echo -n " n$idx"; done)"
+
 {
   cat <<EOF
 version: "3"
@@ -28,6 +31,10 @@ services:
     environment:
       CLUSTER_KEY: '$CLUSTER_KEY'
       CLUSTER_PUBKEY: '$CLUSTER_PUBKEY'
+      CLUSTER_SIZE: '$SIZE'
+      CLUSTER_PORT: '$PORT'
+      CLUSTER_NODES: '$NODES'
+      CLUSTER_NODESLST: '$NODESLST'
     volumes:
       - $DATADIR:/data
     networks:
@@ -42,6 +49,10 @@ EOF
     environment:
       CLUSTER_KEY: '$CLUSTER_KEY'
       CLUSTER_PUBKEY: '$CLUSTER_PUBKEY'
+      CLUSTER_SIZE: '$SIZE'
+      CLUSTER_PORT: '$PORT'
+      CLUSTER_NODES: '$NODES'
+      CLUSTER_NODESLST: '$NODESLST'
     volumes:
       - $DATADIR:/data
     networks:

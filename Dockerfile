@@ -18,6 +18,7 @@ ENV NOTVISIBLE "in users profile"
 RUN echo "export VISIBLE=now" >> /etc/profile
 
 RUN echo "export LC_ALL=en_US.UTF-8" >> /root/.bashrc
+RUN echo "source /root/.clusterenv" >> /root/.bashrc
 
 ADD server.sh /server.sh
 

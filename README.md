@@ -17,3 +17,11 @@ your docker swarm nodes
 # To connect to your new shiny cluster
 
     ssh -p 1234 -i ubuntucluster_1234.sshkey root@ymslanda.innovationgarage.tech
+
+# To execute a command on all nodes
+
+    parallel --no-notice -S $CLUSTER_NODES --nonall hostname
+
+# To scp something to all nodes
+
+    for node in $CLUSTER_NODESLST; do scp file $node:file; done
