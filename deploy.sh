@@ -2,22 +2,54 @@
 
 source config.sh
 
-SIZE=$1
-PORT=$2
-[ "$PORT" != "" ] || PORT=2223
+argparse() {
+    export ARGS=()
+    for _ARG in "$@"; do
+        if [ "${_ARG##--*}" == "" ]; then
+            _ARG="${_ARG#--}"
+            if [ "${_ARG%%*=*}" == "" ]; then
+                _ARGNAME="$(echo ${_ARG%=*} | tr - _)"
+                eval "export ARG_${_ARGNAME}"='"${_ARG#*=}"'
+            else
+                eval "export ARG_${_ARG}"='True'       
+            fi
+        else
+            ARGS+=($_ARG)
+        fi
+    done
+}
 
-CLUSTER=ubuntucluster_$PORT
+ARG_ssh_port=2223
+argparse "$@"
+[ "$ARG_size" ] || {
+  cat <<EOF
+Usage: deploy.sh --size=SIZE [OPTIONS]
 
-rm $CLUSTER.sshkey $CLUSTER.sshkey.pub
-ssh-keygen -t rsa -N "" -f $CLUSTER.sshkey
-CLUSTER_KEY="$(tr "\n" "%" < $CLUSTER.sshkey)"
-CLUSTER_PUBKEY="$(tr "\n" "%" < $CLUSTER.sshkey.pub)"
+Available options:
 
-docker build --tag $REGISTRY/ubuntucluster:latest .
-docker push $REGISTRY/ubuntucluster:latest 
+    --ssh-port=PORT
+    --cluster=CLUSTER_NAME
+    --ports=PORT,PORT,...
+    --dryrun
+EOF
+  exit 1
+}
 
-NODES="n1$(for ((idx=2;idx<=SIZE;idx++)); do echo -n ",n$idx"; done)"
-NODESLST="n1$(for ((idx=2;idx<=SIZE;idx++)); do echo -n " n$idx"; done)"
+[ "$ARG_cluster" ] || ARG_cluster=ubuntucluster_${ARG_ssh_port}
+
+rm ${ARG_cluster}.sshkey ${ARG_cluster}.sshkey.pub
+ssh-keygen -t rsa -N "" -f ${ARG_cluster}.sshkey
+CLUSTER_KEY="$(tr "\n" "%" < ${ARG_cluster}.sshkey)"
+CLUSTER_PUBKEY="$(tr "\n" "%" < ${ARG_cluster}.sshkey.pub)"
+
+NODES="n1$(for ((idx=2;idx<=ARG_size;idx++)); do echo -n ",n$idx"; done)"
+NODESLST="n1$(for ((idx=2;idx<=ARG_size;idx++)); do echo -n " n$idx"; done)"
+
+PORTS=""
+for port in $(echo "${ARG_ports}" | tr , " "); do
+    PORTS="$PORTS
+      - \"$port\""
+done
 
 {
   cat <<EOF
@@ -27,43 +59,47 @@ services:
     hostname: n1
     image: $REGISTRY/ubuntucluster:latest
     ports:
-      - "$PORT:22"
+      - "${ARG_ssh_port}:22"${PORTS}
     environment:
-      CLUSTER_KEY: '$CLUSTER_KEY'
-      CLUSTER_PUBKEY: '$CLUSTER_PUBKEY'
-      CLUSTER_SIZE: '$SIZE'
-      CLUSTER_PORT: '$PORT'
+      CLUSTER_KEY: '${ARG_cluster}_KEY'
+      CLUSTER_PUBKEY: '${ARG_cluster}_PUBKEY'
+      CLUSTER_SIZE: '${ARG_size}'
+      CLUSTER_PORT: '${ARG_ssh_port}'
       CLUSTER_NODES: '$NODES'
       CLUSTER_NODESLST: '$NODESLST'
     volumes:
       - $DATADIR:/data
     networks:
-      - $CLUSTER
+      - ${ARG_cluster}
 EOF
 
-  for ((IDX=2; IDX<=SIZE; IDX++)); do
+  for ((IDX=2; IDX<=ARG_size; IDX++)); do
     cat <<EOF
   n$IDX:
     hostname: n$IDX
     image: $REGISTRY/ubuntucluster:latest
     environment:
-      CLUSTER_KEY: '$CLUSTER_KEY'
-      CLUSTER_PUBKEY: '$CLUSTER_PUBKEY'
-      CLUSTER_SIZE: '$SIZE'
-      CLUSTER_PORT: '$PORT'
+      CLUSTER_KEY: '${ARG_cluster}_KEY'
+      CLUSTER_PUBKEY: '${ARG_cluster}_PUBKEY'
+      CLUSTER_SIZE: '${ARG_size}'
+      CLUSTER_PORT: '${ARG_ssh_port}'
       CLUSTER_NODES: '$NODES'
       CLUSTER_NODESLST: '$NODESLST'
     volumes:
       - $DATADIR:/data
     networks:
-      - $CLUSTER
+      - ${ARG_cluster}
 EOF
   done
 
   cat <<EOF
 networks:
-  $CLUSTER:
+  ${ARG_cluster}:
 EOF
 } > docker-compose.yml
 
-docker stack deploy -c docker-compose.yml $CLUSTER
+[ "${ARG_dryrun}" ] || {
+    docker build --tag $REGISTRY/ubuntucluster:latest .
+    docker push $REGISTRY/ubuntucluster:latest 
+    docker stack deploy -c docker-compose.yml ${ARG_cluster}
+}
