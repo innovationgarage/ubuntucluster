@@ -1,4 +1,4 @@
-export SWARM=ymslanda.innovationgarage.tech
-export DOCKER_HOST=tcp://$SWARM:2375
-export REGISTRY=$SWARM:5000
-export DATADIR=/ymslanda
+export ARG_clusterhost=ymslanda.innovationgarage.tech
+export DOCKER_HOST=tcp://${ARG_clusterhost}:2375
+export ARG_registry=${ARG_clusterhost}:5000
+export ARG_data=/ymslanda

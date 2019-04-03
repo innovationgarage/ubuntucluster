@@ -1,10 +1,13 @@
 FROM ubuntu:18.10
 
-RUN apt-get update
-RUN apt-get install -y openssh-server
-RUN apt-get install -y parallel
-RUN apt-get install -y build-essential
-RUN apt-get install -y language-pack-en
+RUN echo Version 1
+RUN apt update
+RUN apt install -y openssh-server
+RUN apt install -y parallel
+RUN apt install -y build-essential
+RUN apt install -y language-pack-en
+RUN apt install -y docker.io
+RUN apt install -y docker-compose
 RUN apt install nano mg
 
 RUN mkdir /var/run/sshd
