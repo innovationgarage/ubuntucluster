@@ -61,8 +61,8 @@ services:
     ports:
       - "${ARG_ssh_port}:22"${PORTS}
     environment:
-      CLUSTER_KEY: '${ARG_cluster}_KEY'
-      CLUSTER_PUBKEY: '${ARG_cluster}_PUBKEY'
+      CLUSTER_KEY: '${CLUSTER_KEY}'
+      CLUSTER_PUBKEY: '${CLUSTER_PUBKEY}'
       CLUSTER_SIZE: '${ARG_size}'
       CLUSTER_PORT: '${ARG_ssh_port}'
       CLUSTER_NODES: '$NODES'
