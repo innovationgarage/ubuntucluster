@@ -1,5 +1,7 @@
 #! /bin/bash
 
+export VERSION=0.0.1
+
 source config.sh
 
 argparse() {
@@ -86,7 +88,7 @@ EOF
     cat <<EOF
   n$IDX:
     hostname: n${IDX}
-    image: ${ARG_registry}/ubuntucluster:latest
+    image: ${ARG_registry}/ubuntucluster:$VERSION
     environment:
       CLUSTER_SIZE: '${ARG_size}'
       CLUSTER_PORT: '${ARG_ssh_port}'
@@ -129,8 +131,10 @@ if [ "${ARG_dryrun}" ]; then
     export | grep ARG_
 else
     {
-        docker build --tag "$ARG_registry/ubuntucluster:latest" .
-        docker push "$ARG_registry/ubuntucluster:latest" 
+        if ! docker images | grep "$ARG_registry/ubuntucluster *$VERSION" > /dev/null 2>&1; then
+            docker build --tag "$ARG_registry/ubuntucluster:$VERSION" .
+            docker push "$ARG_registry/ubuntucluster:$VERSION"
+        fi
         docker stack deploy -c docker-compose.yml "${ARG_cluster}"
     } >&2
     
